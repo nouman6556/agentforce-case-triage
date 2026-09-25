@@ -17,12 +17,15 @@ public with sharing class CaseContextForPrompt {
     public static List<Response> build(List<Request> requests) {
         List<Response> out = new List<Response>();
         CaseTriageEngine engine = new CaseTriageEngine();
+        Set<Id> caseIds = new Set<Id>();
+        for (Request req : requests) { caseIds.add(req.relatedCase.Id); }
+        Map<Id, Case> cases = new Map<Id, Case>([
+            SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin,
+                (SELECT CommentBody, CreatedDate FROM CaseComments ORDER BY CreatedDate DESC LIMIT 3)
+            FROM Case WHERE Id IN :caseIds WITH USER_MODE
+        ]);
         for (Request req : requests) {
-            Case c = [
-                SELECT Id, CaseNumber, Subject, Description, Status, Priority, Origin,
-                    (SELECT CommentBody, CreatedDate FROM CaseComments ORDER BY CreatedDate DESC LIMIT 3)
-                FROM Case WHERE Id = :req.relatedCase.Id WITH USER_MODE
-            ];
+            Case c = cases.get(req.relatedCase.Id);
             CaseTriageEngine.TriageResult t = engine.triage(c.Subject, c.Description);
             List<String> lines = new List<String>{
                 'Case ' + c.CaseNumber + ' | Status: ' + c.Status + ' | Channel: ' + c.Origin,

@@ -13,7 +13,7 @@ public with sharing class CaseRoutingService {
     public static Map<String, Id> queueIdsByDeveloperName() {
         Map<String, Id> result = new Map<String, Id>();
         for (QueueSobject qs : [
-            SELECT Queue.Id, Queue.DeveloperName FROM QueueSobject WHERE SobjectType = 'Case'
+            SELECT Queue.Id, Queue.DeveloperName FROM QueueSobject WHERE SobjectType = 'Case' WITH USER_MODE
         ]) {
             result.put(qs.Queue.DeveloperName, qs.Queue.Id);
         }
